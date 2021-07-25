@@ -1,13 +1,11 @@
-import numpy as np
+from scipy import misc
+from numpy import linalg
 import matplotlib.pyplot as plt
 
-rg = np.random.default_rng(1)
+img = misc.face()
 
-mu, sigma = 2, 0.5
-v = rg.normal(mu, sigma, 10000)
+img_array = img / 255
+img_gray = img_array @ [0.2126, 0.7152, 0.0722]
 
-plt.hist(v, bins=50, density=True)
-
-(n, bins) = np.histogram(v, bins=50, density=True)
-plt.plot(.5 * (bins[1:] + bins[:-1]), n)
+plt.imshow(img_gray, cmap='gray')
 plt.show()
