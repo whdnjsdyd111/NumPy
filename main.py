@@ -1,56 +1,31 @@
-import numpy as np
-import os
+import csv
+
 import matplotlib.pyplot as plt
-from numpy import ma
+import numpy as np
+import statsmodels.api as sm
+import os
 
-filepath = os.getcwd()
-filename = os.path.join(filepath, "who_covid_19_sit_rep_time_series.csv")
+A_M = np.log(2) / 2
+B_M = np.log(2250) - A_M * 1971
+Moores_law = lambda year: np.exp(B_M) * np.exp(A_M * year)
 
-# skip_header 와 usecols 로 데이터 파일을 각 변수에 추가한다.
-# 첫 번째 행에서 3-7 열의 날짜만 읽는다.
-dates = np.genfromtxt(filename, dtype=np.unicode_, delimiter=",",
-                      max_rows=1, usecols=range(3, 17),
-                      encoding="utf-8-sig")
+ML_1971 = Moores_law(1971)
+ML_1973 = Moores_law(1973)
+print("In 1973, G. Moore expects {:.0f} transistors on Intels chips".format(ML_1973))
+print("This is x{:.2f} more transistors than 1971".format(ML_1973 / ML_1971))
 
-# 처음 두 컬럼으로 부터 위치 이름을 읽는다.
-# 처음 7 행은 생략한다.
-locations = np.genfromtxt(filename, dtype=np.unicode_, delimiter=",",
-                          skip_header=7, usecols=(0, 1),
-                          encoding="utf-8-sig")
+data = np.loadtxt('transistor_data.csv', delimiter=',',
+                  usecols=[1, 2], skiprows=1)
 
-# 처음 14일 동안의 숫자 데이터를 읽는다.
-nbcases = np.genfromtxt(filename, dtype=np.int_, delimiter=",",
-                        skip_header=7, usecols=range(3, 17),
-                        encoding="utf-8-sig")
+year = data[:, 1]
+transistor_count = data[:, 0]
 
-selected_dates = [0, 3, 11, 13]
+print("year:\t\t", year[:10])
+print("trans. cnt:\t", transistor_count[:10])
 
-nbcases_ma = ma.masked_values(nbcases, -1)
+yi = np.log(transistor_count)
+Z = year[:, np.newaxis] ** [1, 0]
+model = sm.OLS(yi, Z)
 
-china_masked = nbcases_ma[locations[:, 1] == 'China'].sum(axis=0)
-
-china_mask = ((locations[:, 1] == 'China') &
-              (locations[:, 0] != 'Hong Kong') &
-              (locations[:, 0] != 'Taiwan') &
-              (locations[:, 0] != 'Macau') &
-              (locations[:, 0] != 'Unspecified*'))
-
-china_total = nbcases_ma[china_mask].sum(axis=0)
-
-invalid = china_total[china_total.mask]
-valid = china_total[~china_total.mask]
-
-t = np.arange(len(china_total))
-params = np.polyfit(t[~china_total.mask], valid, 3)
-cubic_fit = np.polyval(params, t)
-plt.plot(t, china_total, label='Mainland China');
-
-plt.plot(t[china_total.mask], cubic_fit[china_total.mask], '--',
-         color='orange', label='Cubic estimate')
-plt.plot(7, np.polyval(params, 7), 'r*', label='7 days after start')
-plt.xticks([0, 7, 13], dates[[0, 7, 13]])
-plt.yticks([0, np.polyval(params, 7), 10000, 17500])
-plt.legend()
-plt.title("COVID-19 cumulative cases from Jan 21 to Feb 3 2020 - Mainland China\n"
-          "Cubic estimate for 7 days after start")
-plt.show()
+results = model.fit()
+print(results.summary())
