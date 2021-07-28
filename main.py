@@ -29,3 +29,32 @@ model = sm.OLS(yi, Z)
 
 results = model.fit()
 print(results.summary())
+
+AB = results.params
+A = AB[0]
+B = AB[1]
+
+print("Rate of semiconductors added on a chip every 2 years:")
+print(
+    "\tx{:.2f} +/- {:.2f} semiconductors per chip".format(
+        np.exp(A * 2), 2 * A * np.exp(2 * A) * 0.006
+    )
+)
+
+transistor_count_predicted = np.exp(B) * np.exp(A * year)
+transistor_Moores_law = Moores_law(year)
+plt.style.use("fivethirtyeight")
+plt.semilogy(year, transistor_count, "s", label = "MOS transistor count")
+plt.semilogy(year, transistor_count_predicted, label = "linear regression")
+
+
+plt.plot(year, transistor_Moores_law, label = "Moore's Law")
+plt.title(
+    "MOS transistor count per microprocessor\n"
+    + "every two years \n"
+    + "Transistor count was x{:.2f} higher".format(np.exp(A * 2))
+)
+plt.xlabel("year introduced")
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+plt.ylabel("# of transistors\nper microprocessor")
+plt.show()
