@@ -1,60 +1,37 @@
-import csv
-
-import matplotlib.pyplot as plt
-import numpy as np
-import statsmodels.api as sm
+import requests
 import os
+import gzip
+import numpy as np
 
-A_M = np.log(2) / 2
-B_M = np.log(2250) - A_M * 1971
-Moores_law = lambda year: np.exp(B_M) * np.exp(A_M * year)
+data_sources = {
+    "training_images": "train-images-idx3-ubyte.gz",   # 60,000 training images.
+    "test_images": "t10k-images-idx3-ubyte.gz",        # 10,000 test images.
+    "training_labels": "train-labels-idx1-ubyte.gz",   # 60,000 training labels.
+    "test_labels": "t10k-labels-idx1-ubyte.gz"         # 10,000 test labels.
+}
 
-ML_1971 = Moores_law(1971)
-ML_1973 = Moores_law(1973)
-print("In 1973, G. Moore expects {:.0f} transistors on Intels chips".format(ML_1973))
-print("This is x{:.2f} more transistors than 1971".format(ML_1973 / ML_1971))
+data_dir = '../_data'
+os.makedirs(data_dir, exist_ok=True)
 
-data = np.loadtxt('transistor_data.csv', delimiter=',',
-                  usecols=[1, 2], skiprows=1)
+base_url = "https://github.com/rossbar/numpy-tutorial-data-mirror/blob/main/"
 
-year = data[:, 1]
-transistor_count = data[:, 0]
+for fname in data_sources.values():
+    fpath = os.path.join(data_dir, fname)
+    if not os.path.exists(fpath):
+        print("Downloading file: " + fname)
+        resp = requests.get(base_url + fname, stream=True)
+        resp.raise_for_status() # 다운로드가 성공했는지 확인
+        with open(fpath, "wb") as fh:
+            for chunk in resp.iter_content(chunk_size=128):
+                fh.write(chunk)
 
-print("year:\t\t", year[:10])
-print("trans. cnt:\t", transistor_count[:10])
+mnist_dataset = {}
 
-yi = np.log(transistor_count)
-Z = year[:, np.newaxis] ** [1, 0]
-model = sm.OLS(yi, Z)
-
-results = model.fit()
-print(results.summary())
-
-AB = results.params
-A = AB[0]
-B = AB[1]
-
-print("Rate of semiconductors added on a chip every 2 years:")
-print(
-    "\tx{:.2f} +/- {:.2f} semiconductors per chip".format(
-        np.exp(A * 2), 2 * A * np.exp(2 * A) * 0.006
-    )
-)
-
-transistor_count_predicted = np.exp(B) * np.exp(A * year)
-transistor_Moores_law = Moores_law(year)
-plt.style.use("fivethirtyeight")
-plt.semilogy(year, transistor_count, "s", label = "MOS transistor count")
-plt.semilogy(year, transistor_count_predicted, label = "linear regression")
-
-
-plt.plot(year, transistor_Moores_law, label = "Moore's Law")
-plt.title(
-    "MOS transistor count per microprocessor\n"
-    + "every two years \n"
-    + "Transistor count was x{:.2f} higher".format(np.exp(A * 2))
-)
-plt.xlabel("year introduced")
-plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-plt.ylabel("# of transistors\nper microprocessor")
-plt.show()
+# 이미지
+for key in ("training_images", "test_images"):
+    with gzip.open(os.path.join(data_dir, data_sources[key]), 'rb') as mnist_file:
+        mnist_dataset[key] = np.frombuffer(mnist_file.read(), np.uint8, offset=16).reshape(-1, 28*28)
+# 라벨
+for key in ("training_labels", "test_labels"):
+    with gzip.open(os.path.join(data_dir, data_sources[key]), 'rb') as mnist_file:
+        mnist_dataset[key] = np.frombuffer(mnist_file.read(), np.uint8, offset=8)
