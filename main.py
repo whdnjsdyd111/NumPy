@@ -11,10 +11,8 @@ data_sources = {
     "test_labels": "t10k-labels-idx1-ubyte.gz"         # 10,000 test labels.
 }
 
-data_dir = '../_data'
-os.makedirs(data_dir, exist_ok=True)
-
 base_url = "https://github.com/rossbar/numpy-tutorial-data-mirror/blob/main/"
+data_dir = os.getcwd()
 
 for fname in data_sources.values():
     fpath = os.path.join(data_dir, fname)
@@ -31,7 +29,7 @@ mnist_dataset = {}
 # 이미지
 for key in ("training_images", "test_images"):
     with gzip.open(os.path.join(data_dir, data_sources[key]), 'rb') as mnist_file:
-        mnist_dataset[key] = np.frombuffer(mnist_file.read(), np.uint8, offset=16).reshape(-1, 28*28)
+        mnist_dataset[key] = np.frombuffer(mnist_file.read(), np.uint8, offset=16).reshape(-1, 28, 28)
 # 라벨
 for key in ("training_labels", "test_labels"):
     with gzip.open(os.path.join(data_dir, data_sources[key]), 'rb') as mnist_file:
@@ -51,4 +49,5 @@ mnist_image = x_train[59999, :].reshape(28, 28)
 # 검은색 배경을 사용하려면 색상 매핑을 그레이스케일로 설정한다.
 plt.imshow(mnist_image, cmap='gray')
 plt.show()
+
 
