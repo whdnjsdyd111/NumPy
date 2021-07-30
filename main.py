@@ -43,11 +43,13 @@ x_train, y_train, x_test, y_test = (mnist_dataset["training_images"],
 print('The shape of training images: {} and training labels: {}'.format(x_train.shape, y_train.shape))
 print('The shape of test images: {} and test labels: {}'.format(x_test.shape, y_test.shape))
 
-# 훈련셋으로부터의 60,000 번째 이미지 (인덱스 59,999)를
-# (784,) 를 (28, 28) 로 적합한 모양으로 만든다.
-mnist_image = x_train[59999, :].reshape(28, 28)
-# 검은색 배경을 사용하려면 색상 매핑을 그레이스케일로 설정한다.
-plt.imshow(mnist_image, cmap='gray')
+# 훈련셋으로부터 랜덤으로 5개의 이미지
+num_examples = 5
+seed = 147197952744
+rng = np.random.default_rng(seed)
+
+fig, axes = plt.subplots(1, num_examples)
+for sample, ax in zip(rng.choice(x_train, size=num_examples, replace=False), axes):
+    ax.imshow(sample.reshape(28, 28), cmap='gray')
+
 plt.show()
-
-
