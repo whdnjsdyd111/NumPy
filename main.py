@@ -142,11 +142,6 @@ for j in range(epochs):
 
     # 각각의 에포크의 테스트셋 성능을 측정한다.
 
-    # Unlike the training step, the weights are not modified for each image
-    # (or batch). Therefore the model can be applied to the test images in a
-    # vectorized manner, eliminating the need to loop over each image
-    # individually:
-
     # 휸련 단계와 달리, 각 이미지(배치)에 대한 수정이 되지 않는다.
     # 그러므로 개별적으로 각 이미지에 루프할 필요가 없는 벡터화된 방법으로 테스트용 이미지에 모델을 적용할 수 있다.
 
